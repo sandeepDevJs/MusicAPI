@@ -41,8 +41,8 @@ function validate_data(body) {
     let schema = joi.object({
         name: joi.string().max(10).min(2).required(),
         singer: joi.string().max(10).min(2).required(),
-        releaseDate: joi.string().max(10).min(2).required(),
-        price: joi.number().max(10).min(2).required(),
+        releaseDate: joi.date().required(),
+        price: joi.number().max(10000).min(1000).required(),
 
     });
 
