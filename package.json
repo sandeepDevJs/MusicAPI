@@ -4,12 +4,14 @@
   "description": "An Express API",
   "main": "index.js",
   "scripts": {
+    "start": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "sandeepDevJS",
   "license": "MIT",
   "dependencies": {
     "express": "^4.17.1",
-    "joi": "^17.3.0"
+    "joi": "^17.3.0",
+    "morgan": "^1.10.0"
   }
 }
