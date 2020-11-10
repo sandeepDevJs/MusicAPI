@@ -1,14 +1,12 @@
 const express = require("express");
 const morgan = require("morgan");
 const joi = require("joi");
+const helmet = require("helmet");
+const working = require("./middlewares/mid");
 const app = express();
 app.use(express.json());
-app.use(morgan("dev"));
-
-function auth(req, res, next) {
-    console.log("Authenticating...");
-    next();
-}
+app.use(helmet());
+app.use(morgan(":method :url :response-time"));
 
 app.listen(4800, () => console.log("server started"));
 
@@ -57,7 +55,7 @@ function validate_data(body) {
 }
 
 
-app.get("/api/musics", auth, (req, res) => {
+app.get("/api/musics", working, (req, res) => {
     res.send(musics);
 });
 
@@ -116,3 +114,5 @@ app.delete("/api/removeMusic/:id", (req, res) => {
     musics.splice(musicid, 1);
     res.send({message: "Data Deleted."});
 })
+
+console.log(process.env.NODE_ENV);
