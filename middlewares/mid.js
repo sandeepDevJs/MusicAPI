@@ -1,5 +1,6 @@
 function working(req, res, next) {
-    console.log("working");
+    req.requestTime = Date.now();
+    console.log(req.requestTime);
     next();
 }
 
