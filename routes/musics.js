@@ -25,7 +25,14 @@ function validateData(data, specified={}) {
             price:Joi.number().required()
         });
         let result = validateSchema.validate(data);
-        return (result.error) ? result.error.details[0].message : true;
+        if (!result.error) {
+            if (!validateId(data.genre)) {
+                return "Invalid Genre Id";
+            }
+            return true;
+        }else{
+            return result.error.details[0].message;
+        }
     }else{
         let designedSchema = {};
         let documentFields = ["name", "singer", "genre", "releaseDate", "price"];
@@ -49,7 +56,7 @@ function validateData(data, specified={}) {
                     designedSchema.genre = Joi.string().required();
                 }
             }else{
-                return {message: `Field Name ${key}  Didn't Match`}
+                return {message: `Field Name ${key} Didn't Match`}
             }
         }
         //if Designed Schema is empty
@@ -65,10 +72,10 @@ function validateData(data, specified={}) {
 }
 
 //Object Id Validation
-async function validateId(id) {
+async function validateId(id, Collection=Musics) {
     let musicData;
     try{
-        musicData = await Musics.findById(id)
+        musicData = await Collection.findById(id)
     }
     catch(err){ 
         return false;
@@ -100,6 +107,11 @@ router.post("/createMusic", async (req, res) => {
     if(doCreate !== true){
         res.send({"error": doCreate});
     }else{
+        doCreate = validateId(req.body.genre);
+        if(!doCreate){
+            res.status(404).send({"error": "Invalid ID"});
+            return false;
+        }
         let musicData =  {
             name:req.body.name,
             singer:req.body.singer,
@@ -121,6 +133,11 @@ router.put("/UpdateMusic/:id", async (req, res) => {
         let isIdValid = await validateId(req.params.id);
         if(!isIdValid){
             return res.status(404).send({message:"Invalid ID"});
+        }
+        isIdValid = await validateId(req.body.genre, Genre);
+        if(!isIdValid){
+            res.status(404).send({"error": "Invalid Genre ID"});
+            return false;
         }
         let updatedData =  await Musics.findOneAndUpdate({_id: req.params.id}, {$set: req.body}, {runValidators:true,  new:true, useFindAndModify:false});
         res.send({message:"Data Updated", Result: updatedData});
