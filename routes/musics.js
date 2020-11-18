@@ -1,28 +1,26 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const router =  express.Router();
+const mongoose = require("mongoose");
 const Joi = require("joi");
+const musicCollection = require("../schemas/musics.schema");
+const genreCollection = require("../schemas/genre.schema");
 
 //Setting Up A Mongoose Connection
-mongoose.connect("mongodb://localhost:27017/mongoose_db", {useNewUrlParser:true, useUnifiedTopology:true})
-.then(() => console.log("Connteced To MongoDB.")).catch(() => console.log("An Error Occurrred While Connecting To Database"));
+mongoose.connect("mongodb://localhost:27017/mongoose_db", { useNewUrlParser:true, useUnifiedTopology:true })
+.then(() => console.log("Connected to Mongodb"))
+.catch(() => console.log("Error Connecting MongoDB"));
 
-let musicSchema = {
-    name: {type:String, min:3, max:50, required:true},
-    singer: {type:String , min:3, max:50, required:true},
-    releaseDate: {type:Date},
-    price:{type:Number, min:500, max:99999, required:true}
-}
+const Musics = musicCollection.Musics;
+const Genre = genreCollection.Genre;
 
-let Musics = mongoose.model("music", musicSchema, "music");
-
-// if data is given then it'll validate every field.
-// if data=0 and specified is given then it will validate as per field given.
+/* if data is given then it'll validate every field.
+   if data=0 and specified is given then it will validate as per field given.*/
 function validateData(data, specified={}) {
     if(data !== 0){
         let validateSchema = Joi.object({
             name: Joi.string().min(3).max(50).required(),
             singer: Joi.string().min(3).max(50).required(),
+            genre: Joi.string(),
             releaseDate: Joi.date().required(),
             price:Joi.number().required()
         });
@@ -30,7 +28,7 @@ function validateData(data, specified={}) {
         return (result.error) ? result.error.details[0].message : true;
     }else{
         let designedSchema = {};
-        let documentFields = ["name", "singer", "releaseDate", "price"];
+        let documentFields = ["name", "singer", "genre", "releaseDate", "price"];
         //designing Schema as per fields Given in Specified object.
         for (let key in specified) {
             if (documentFields.includes(key)) { 
@@ -46,6 +44,9 @@ function validateData(data, specified={}) {
                 }
                 if (key === "price") {
                     designedSchema.price = Joi.number().required();
+                }
+                if (key === "genre") {
+                    designedSchema.genre = Joi.string().required();
                 }
             }else{
                 return {message: `Field Name ${key}  Didn't Match`}
@@ -63,6 +64,7 @@ function validateData(data, specified={}) {
 
 }
 
+//Object Id Validation
 async function validateId(id) {
     let musicData;
     try{
@@ -79,7 +81,7 @@ async function validateId(id) {
 
 //Get All Music List
 router.get("/musics", async (req, res) => {
-    res.send( await Musics.find());
+    res.send( await Musics.find().populate("genre", "genre -_id"));
 });
 
 //Get Music By Id
@@ -101,6 +103,7 @@ router.post("/createMusic", async (req, res) => {
         let musicData =  {
             name:req.body.name,
             singer:req.body.singer,
+            genre: req.body.genre,
             releaseDate:req.body.releaseDate,
             price:req.body.price
         }
@@ -110,7 +113,7 @@ router.post("/createMusic", async (req, res) => {
 });
 
 //Update Existing Music
-router.put("/UpdateMisic/:id", async (req, res) => {
+router.put("/UpdateMusic/:id", async (req, res) => {
     let doUpdate = validateData(0, req.body);
     if (doUpdate !== true) {
         return res.send(doUpdate);
