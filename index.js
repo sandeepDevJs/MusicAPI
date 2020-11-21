@@ -3,14 +3,19 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const config = require("config");
 const mongoose = require("mongoose");
+const Fawn = require("fawn");
 
 const musics = require("./routes/musics");
 const genre = require("./routes/genre");
 const customer = require("./routes/customer"); 
+
 const app = express();
+Fawn.init(mongoose);
+const roller = Fawn.Roller();
+
 
 //Setting Up A Mongoose Connection
-mongoose.connect(config.get("dbUrl"), { useNewUrlParser:true, useUnifiedTopology:true })
+mongoose.connect(config.get("dbUrl"), { useNewUrlParser:true, useUnifiedTopology:true, useCreateIndex: true })
 .then(() => console.log("Connected to DB"))
 .catch((err) => console.log("Error Connecting To DB: \n", err));
 
@@ -24,7 +29,11 @@ app.use("/api", musics);
 app.use("/api", genre);
 app.use("/api", customer);
 
-app.listen(4800, () => console.log("Connected to port 4800") )
+//Rollback All Incomplete Events
+roller.roll()
+      .then(() => {app.listen(4800, () => console.log("Connected to port 4800") )})
+      .catch( (err) => console.log("Error Rolling Back:\n", err) )
+
 
 /*
 

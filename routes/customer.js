@@ -2,11 +2,10 @@ const express = require("express");
 const commonFun = require("../common/functions");
 const customer = require("../schemas/customer.schema");
 const { Musics } = require("../schemas/musics.schema");
-const config = require("config");
 const Fawn = require("fawn");
+const bcrypt = require("bcrypt");
 
 const router = express.Router();
-Fawn.init(config.get("dbUrl"));
 
 //User Registration
 router.post("/register", async (req, res) => {
@@ -17,10 +16,18 @@ router.post("/register", async (req, res) => {
         return res.send({"message": doRegister});
     }
 
+    let email = await customer.Customer.findOne({email : req.body.email.trim()});
+    if(email){
+        return res.send({message : "Given Email Already Exists"});
+    }
+
+    let salt = await bcrypt.genSalt(4);
+    let newPassword = await bcrypt.hash(req.body.password, salt);
+
     let newCustomer = {
         name: req.body.name,
         email: req.body.email,
-        password: req.body.password
+        password: newPassword
     }
     
     new customer.Customer(newCustomer).save();
@@ -42,6 +49,10 @@ router.put("/buyMusic/:id", async (req, res) => {
         return res.status(404).send({message: "Invalid Music Id"});
     }
 
+    if (validateMusicId.stock === 0) {
+        return res.send({message: "Sorry!! This Song Is Out Of Stock"});
+    }
+
     var task = Fawn.Task();
     try{
 
@@ -52,12 +63,6 @@ router.put("/buyMusic/:id", async (req, res) => {
     }catch(err){
         return res.status(505).send({error: err});
     }
-    
-    // validateMusicId.stock--;
-    // validateMusicId.save();
-
-    // validCustomerId.musicBought.push({_id:validateMusicId._id, music:validateMusicId.name})
-    // validCustomerId.save();
     
     return res.send({message: "Music Bought!!"});
 })
