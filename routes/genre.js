@@ -1,89 +1,73 @@
 const express = require("express");
 const router = express.Router();
-const Joi = require("joi");
-const genreCollection = require("../schemas/genre.schema");
+const genre = require("../schemas/genre.schema");
+const commonFun = require("../common/functions");
 
-const Genre = genreCollection.Genre;
-
-function validateGenre(data) {
-    if (!data.hasOwnProperty('genre')) {
-        return {message : "Invalid Field Name!"}
-    }
-    let joiSchema = Joi.object({
-        genre: Joi.string().min(3).max(10).required()
-    });
-
-    let result = joiSchema.validate(data);
-    return (result.error)? result.error.details[0].message : true;
-}
-
-//Object Id Validation
-async function validateId(id) {
-    let genreData;
-    try{
-        genreData = await Genre.findById(id)
-    }
-    catch(err){ 
-        return false;
-    }
-    if(!genreData){ 
-        return false;
-    }
-    return genreData;
-}
-
-
+//Get All Genre
 router.get("/genre", async (req, res) => {
-    res.send(await Genre.find());   
+    return res.send(await genre.Genre.find());   
 });
 
+//Get Genre By Id 
 router.get("/genre/:id", async (req, res) => {
-    let isValid = await validateId(req.params.id); 
+    let isValid = await commonFun.validateId(req.params.id, genre.Genre); 
     if (isValid) {
-        res.send(isValid);
+        return res.send(isValid);
     }else{
-        res.status(404).send({message:"Invalid Id"});
+        return res.status(404).send({message:"Invalid Id"});
     }  
 });
 
-
+// Post A New Genre 
 router.post("/addGenre", async (req, res) => {
 
-    let doCreate = validateGenre(req.body);
+    let doCreate = genre.validateGenre(req.body);
+    //if returs a error message
     if(doCreate !== true){
-        res.send({message: doCreate});
+        return res.send({message: doCreate});
     }else{
-        new Genre(req.body).save();
-        res.send({message:"Genre Created Successfully"});
+        new genre.Genre(req.body).save();
+        return res.send({message:"Genre Created Successfully"});
     }
 
 });
 
+//Update Existing Genre By Id
 router.put("/updateGenre/:id", async (req, res) => {
-    let doUpdate = await validateId(req.params.id);
+    let doUpdate = await commonFun.validateId(req.params.id, genre.Genre);
+    //if invallid id
     if(!doUpdate){
-        res.status(404).send({message:doUpdate});
-        return false
+        return res.status(404).send({message:"invalid ID"});
     }
     else{
-        doUpdate = validateGenre(req.body);
+        doUpdate = genre.validateGenre(req.body);
         if(doUpdate !== true){
-            res.status(404).send({message:doUpdate});
-            return false;
-        }    
-        await Genre.findOneAndUpdate({_id:req.params.id}, {$set:req.body}, {runValidators:true, new:true, useFindAndModify:false});
-        res.send({message:"Data Updated Successfully!!"});
+            return res.status(404).send({message:doUpdate});
+        }   
+
+        await genre.Genre.findOneAndUpdate(
+            {_id:req.params.id},
+            {$set:req.body}, 
+            {
+                runValidators:true, 
+                new:true, 
+                useFindAndModify:false
+            }
+        );
+
+        return res.send({message:"Data Updated Successfully!!"});
     }
 });
 
+//Delete Genre By Id
 router.delete("/removeGenre/:id", async (req, res) =>{
-    let doUpdate = await validateId(req.params.id);
-    if(!doUpdate){
-        res.status(404).send({message:doUpdate});
-        return false
+    let doDelete = await commonFun.validateId(req.params.id, genre.Genre);
+    //if Id is invalid
+    if(!doDelete){
+        return res.status(404).send({message:doDelete});
     }else{
-        await Genre.findByIdAndDelete(req.params.id);
-        res.send({message: "Data Deleted Succesfully"});
+        await genre.Genre.findByIdAndDelete(req.params.id);
+        return res.send({message: "Data Deleted Succesfully"});
     }
 })
 
