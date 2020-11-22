@@ -14,7 +14,7 @@ Fawn.init(mongoose);
 const roller = Fawn.Roller();
 
 
-//Setting Up A Mongoose Connection
+//Setting Up Mongoose Connection
 mongoose.connect(config.get("dbUrl"), { useNewUrlParser:true, useUnifiedTopology:true, useCreateIndex: true })
 .then(() => console.log("Connected to DB"))
 .catch((err) => console.log("Error Connecting To DB: \n", err));
@@ -29,7 +29,7 @@ app.use("/api", musics);
 app.use("/api", genre);
 app.use("/api", customer);
 
-//Rollback All Incomplete Events
+//Rollback All Incomplete Transaction
 roller.roll()
       .then(() => {app.listen(4800, () => console.log("Connected to port 4800") )})
       .catch( (err) => console.log("Error Rolling Back:\n", err) )
@@ -39,8 +39,9 @@ roller.roll()
 
     TODO:
 
-    1) -> create registration & Login
-    DB relation video
+    1) -> Login with encryption
+    2) -> jwt
+    3) -> Admin Auth
 
 
 */
