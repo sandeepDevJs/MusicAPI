@@ -40,7 +40,7 @@ router.post("/register", async (req, res) => {
 
 });
 
-
+// User Login
 router.post("/login", async (req, res) => {
     let email = await customer.Customer.findOne({ email : req.body.email });
     if(!email) return res.send({message:"Invalid Email"});
@@ -88,10 +88,10 @@ router.put("/buyMusic/:id", async (req, res) => {
         .run();
 
     }catch(err){
-        return res.status(505).send({error: err});
+        return res.status(500).send({message: "An Error Occured."});
     }
     
-    return res.send({message: "Music Bought!!"});
+    return res.send({message: "Thank You For Buying."});
 });
 
 router.get("/getUsers", authUser, (req, res) => {

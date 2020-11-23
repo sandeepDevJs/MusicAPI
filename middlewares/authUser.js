@@ -1,6 +1,12 @@
 const jwt = require("jsonwebtoken");
 const config = require("config");
 
+/*
+**********************************************
+Authorize User Using Jwt Token
+**********************************************
+*/
+
 function authUser(req, res, next) {
 
     let userToken = req.headers["x-auth-token"];
