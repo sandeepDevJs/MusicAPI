@@ -3,10 +3,13 @@ const Fawn = require("fawn");
 const bcrypt = require("bcrypt");
 const config = require("config");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 const commonFun = require("../common/functions");
 const customer = require("../schemas/customer.schema");
 const { Musics } = require("../schemas/musics.schema");
 const authUser = require("../middlewares/authUser"); 
+const SMTPConnection = require("nodemailer/lib/smtp-connection");
 
 const router = express.Router();
 
@@ -100,5 +103,105 @@ router.get("/getUsers", authUser, (req, res) => {
 
 })
 
+router.post("/forgotPassword", async(req, res) => {
+    if (!req.body.email) {
+        return res.send({message: "No Email Was Provided."});
+    }
+    
+    //it'll only validate email
+    let validEmail = customer.validateCustomer(req.body, true);
+    if(validEmail !== true){
+        return res.send({message:"Invalid Email."});
+    }
+
+    let email = await customer.Customer.findOne({email: req.body.email});
+    if (!email) return res.send({message : "Given Email Is Not Registered."});
+
+    //Generating Reset token
+    let resetToken = crypto.randomBytes(35).toString("hex");
+    email.resetPasswordToken = resetToken;
+    email.resetpasswordExpAt = new Date() + 1800000; // 1000msec = 1sec; 1000*60 (1 minute);  1000*60*30 = 30minutes
+    email.save();
+
+    //setting up transporter for nodemailer
+    let transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false, 
+        auth: {
+            user: "baylee0@ethereal.email",
+            pass: "QH8TDdRjZcKrnD78Wf"
+        }
+    })
+    
+
+    await transporter.sendMail(
+        {
+            from: "'Music Api' <sandygupta8291@gmail.com>",
+            to: req.body.email,
+            subject: "Change Password",
+            text: "Use Below Token to Change Your Password.\n" + resetToken    
+        }, 
+
+        (err, info) => {
+                if (err) {
+                    console.log(err);
+                    return res.send({message : "An Error Occured While Sending Mail"});
+                }else{
+                    return res.send({message : "Check Your Mail For Password Change"})
+                }
+         }
+    );
+
+})
+
+router.put("/resetPassword/:userToken", async (req, res) => {
+    if(!req.params.userToken){
+        return res.send({message:"No Token Given"});
+    }
+
+    //token has user data
+    let token = await customer.Customer.findOne({resetPasswordToken : req.params.userToken.toString()});
+    if(!token.email) return res.status(403).send({message: "Invalid Token!!"});
+
+    if(token.resetpasswordExpAt > Date.now() ){
+        return res.status(403).send({message: "Token Expired."});
+    }
+
+    if(!req.body.password){
+        return res.send({message: "No Password Given."});   
+    }
+
+    //password Validation
+    isValidPassword = customer.validateCustomer(req.body, true);
+    //if password validation returns error
+    if(isValidPassword !== true){
+        return res.send({message: password}); //send validation error
+    }
+
+    //hash password
+    let salt = await bcrypt.genSalt(10);
+    await bcrypt.hash(req.body.password, salt, (err, hashedPass) => {
+        if(err){
+            res.status(500).send({message: "Internal Error Occurred."});
+        }else{
+            // let task = Fawn.Task();
+            // console.log(token.email)
+            // task.update("customers", {_id : token._id}, {$set : { resetPasswordToken : undefined } })
+            //     .update("customers", {_id : token._id}, {$set : { resetpasswordExpAt : undefined } })
+            //     .update("customers", {_id : token._id}, {$set : { password : hashedPass }})
+            //     .run()
+            //     .then( () => res.send({message : "Password Changed Successfully!!"}))
+            //     .catch( () => res.status(500).send({message : "Error occured"}) )
+
+            token.resetPasswordToken = undefined;
+            token.resetpasswordExpAt = undefined;
+            token.password = hashedPass;
+            token.save();
+
+        }
+    });
+    
+});
 
 module.exports = router;

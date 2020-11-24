@@ -5,6 +5,8 @@ const customerSchema = mongoose.Schema({
     name: { type:String, required:true, min:3, max:20 },
     email: { type:String, required:true, unique:true },
     password: { type:String, required:true },
+    resetPasswordToken : {type:String},
+    resetpasswordExpAt: {type:Date},
     musicBought : [ {type: Object} ]
 });
 
@@ -28,6 +30,7 @@ function validateCustomer(data, isUpdateValidation=false) {
         customerSchema = Joi.object({
             name: Joi.string().min(3).max(20),
             email: Joi.string().email().min(5),
+            password: Joi.string().min(4).max(8)
         });
 
     }
