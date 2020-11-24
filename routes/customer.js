@@ -9,7 +9,6 @@ const commonFun = require("../common/functions");
 const customer = require("../schemas/customer.schema");
 const { Musics } = require("../schemas/musics.schema");
 const authUser = require("../middlewares/authUser"); 
-const SMTPConnection = require("nodemailer/lib/smtp-connection");
 
 const router = express.Router();
 
@@ -198,6 +197,7 @@ router.put("/resetPassword/:userToken", async (req, res) => {
             token.resetpasswordExpAt = undefined;
             token.password = hashedPass;
             token.save();
+            return res.send({message : "Password Changed Successfully!!"});
 
         }
     });
