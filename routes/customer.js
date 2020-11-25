@@ -5,12 +5,51 @@ const config = require("config");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const multer = require("multer");
 const commonFun = require("../common/functions");
 const customer = require("../schemas/customer.schema");
 const { Musics } = require("../schemas/musics.schema");
 const authUser = require("../middlewares/authUser"); 
 
 const router = express.Router();
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, "./uploads/");
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + file.originalname)
+    } 
+});
+
+
+const fileFilter = (req, file, cb) => {
+    let allowedTypes = [ "image/jpeg", "image/jpg", "image/png" ];
+    if(allowedTypes.includes(file.mimetype)){
+        cb(null, true)
+    }else{
+        req.invalidFormatErr = "Invalid Email";
+        cb(null, false)
+    }
+}
+
+const upload = multer({storage: storage, fileFilter: fileFilter}).single('profile');
+
+
+
+router.put("/addProfile", authUser,  async (req, res) => {
+
+    let userdata = await customer.Customer.findOne({email: req.userEmail});
+    upload(req, res, (err) =>{
+        if (req.invalidFormatErr) {
+            return  res.send({message: "Invalid Format!"});
+        }
+        userdata.profile = req.file.originalname;
+        userdata.save();
+        res.send({message:"Data Updated Successfully!!"});
+    })
+
+});
 
 //User Registration
 router.post("/register", async (req, res) => {
@@ -203,5 +242,7 @@ router.put("/resetPassword/:userToken", async (req, res) => {
     });
     
 });
+
+
 
 module.exports = router;

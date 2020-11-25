@@ -21,6 +21,7 @@ mongoose.connect(config.get("dbUrl"), { useNewUrlParser:true, useUnifiedTopology
 
 //middlewares
 app.use(express.json());
+// app.use(express.static('./uploads/'));
 app.use(helmet());
 app.use(morgan("tiny"));
 
@@ -29,7 +30,7 @@ app.use("/api", musics);
 app.use("/api", genre);
 app.use("/api", customer);
 
-//Rollback All Incomplete Transaction
+//Rollback All Incomplete Transactions
 roller.roll()
       .then(() => {app.listen(4800, () => console.log("Connected to port 4800") )})
       .catch( (err) => console.log("Error Rolling Back:\n", err) )
@@ -39,9 +40,8 @@ roller.roll()
 
     TODO:
 
-    1) -> Login with encryption
-    2) -> jwt
-    3) -> Admin Auth
+    1) -> file upload
+    2) -> pagination
 
 
 */
