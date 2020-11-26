@@ -31,7 +31,9 @@ require("./startup/routes")(app);
  * @INFO-
  * 
  * In Case Of Any Incomplete Transactions
- * ROLLBACK & Start The Server
+ * ROLLBACK & Then Start The Server
+ * 
+ * 
 **/
 
 Fawn.Roller().roll()
