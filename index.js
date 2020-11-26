@@ -2,8 +2,13 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Fawn = require("fawn");
 
+/**  
+    I N I T I A L I Z A T I O N
+**/
+
 const app = express();
 Fawn.init(mongoose);
+
 
 /**  
     DB  C O N N E C T I O N
