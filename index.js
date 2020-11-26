@@ -1,47 +1,49 @@
 const express = require("express");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const config = require("config");
 const mongoose = require("mongoose");
 const Fawn = require("fawn");
 
-const musics = require("./routes/musics");
-const genre = require("./routes/genre");
-const customer = require("./routes/customer"); 
-
 const app = express();
 Fawn.init(mongoose);
-const roller = Fawn.Roller();
+
+/**  
+    DB  C O N N E C T I O N
+**/
+require("./startup/db.connection")(mongoose);
 
 
-//Setting Up Mongoose Connection
-mongoose.connect(config.get("dbUrl"), { useNewUrlParser:true, useUnifiedTopology:true, useCreateIndex: true })
-.then(() => console.log("Connected to DB"))
-.catch((err) => console.log("Error Connecting To DB: \n", err));
+/**
+ * M I D D L E W A R E S 
+**/
 
-//middlewares
-app.use(express.json());
-// app.use(express.static('./uploads/'));
-app.use(helmet());
-app.use(morgan("tiny"));
+require("./startup/middlewares")(app)
 
-//Routes
-app.use("/api", musics);
-app.use("/api", genre);
-app.use("/api", customer);
 
-//Rollback All Incomplete Transactions
-roller.roll()
-      .then(() => {app.listen(4800, () => console.log("Connected to port 4800") )})
-      .catch( (err) => console.log("Error Rolling Back:\n", err) )
+/** 
+ * R O U T E S
+**/
+
+require("./startup/routes")(app);
+
+
+/**
+ * S T A R T I N G   S E R V E R
+ * 
+ * @INFO-
+ * 
+ * In Case Of Any Incomplete Transactions
+ * ROLLBACK & Start The Server
+**/
+
+Fawn.Roller().roll()
+            .then(  () => app.listen(4800, () => console.log("Connected to port 4800") ))
+            .catch( (err) => console.log("Error Rolling Back:\n", err) )
 
 
 /*
 
     TODO:
 
-    1) -> file upload
-    2) -> pagination
+    1) -> pagination
 
 
 */
